@@ -65,35 +65,6 @@ Or grab the pre-built `.exe` from [Releases](https://github.com/stoneheart404/pr
 
 ---
 
-## Screenshot
-
-```
-┌─ ◉ PRIVACYSCOPE ── Scan All  Export  Copy ──── auto-r ─┐
-│ Dashboard │ MS │ WiFi │ Web │ Nearby │ FW │ Terminal    │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│   ╭─────────╮          Well locked down                 │
-│  ╱    67    ╲ ████████░░░░░░  ● 8 High ● 12 Med ● 14 Low│
-│ │  exposure  │                                           │
-│   ╲         ╱                                            │
-│                                                          │
-│  ┌─ Microsoft ───────────────┐ ┌─ WiFi / ISP ───────────┐│
-│  │ ██████████░░░░░░░░░░░░░░  │ │ ██████████████░░░░░░░░  ││
-│  │ ● Telemetry Level: Full   │ │ ● Hostname: DESKTOP-...││
-│  │ ● Advertising ID: Enabled │ │ ● MAC: aa:bb:cc:dd:ee:ff││
-│  │ ● Location: Enabled       │ │ ● DNS: 8.8.8.8         ││
-│  │ + 7 more →                │ │ + 14 more →            ││
-│  └───────────────────────────┘ └────────────────────────┘│
-│                                                          │
-│  $ terminal                                              │
-│  > established: 12 | listening: 3                        │
-├──────────────────────────────────────────────────────────┤
-│  > 58 items exposed                        14:32:56      │
-└──────────────────────────────────────────────────────────┘
-```
-
----
-
 ## Requirements
 
 - **Windows 10 or 11**
