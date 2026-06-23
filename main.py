@@ -40,12 +40,12 @@ MODULES = [
 ]
 
 TABS = [
-    ("dashboard", "Overview", "\u25c6"),
-    ("microsoft", "Microsoft", "\u229e"),
-    ("wifi", "WiFi / ISP", "\u223c"),
-    ("browser", "Websites", "\u25c9"),
-    ("broadcasts", "Nearby", "\u2756"),
-    ("firewall", "Firewall", "\u25a8"),
+    ("dashboard", "Overview", "\u25c8"),       # ◈ diamond/gem — dashboard analytics
+    ("microsoft", "Microsoft", "\u25a0"),      # ■ solid square — OS / system
+    ("wifi", "WiFi / ISP", "\u26a1"),          # ⚡ lightning — network / signal
+    ("browser", "Websites", "\u25c9"),         # ◎ fisheye — globe / web
+    ("broadcasts", "Nearby", "\u25cb"),        # ○ circle — broadcast radius
+    ("firewall", "Firewall", "\u25a8"),        # ▨ patterned square — shield
     ("terminal", "Terminal", "$"),
 ]
 
@@ -376,7 +376,22 @@ class PrivacyScopeApp:
         canvas._wraplength = _wraplength
 
         def mw(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            # clamp scrolling to content bounds
+            bbox = canvas.bbox("all")
+            if not bbox:
+                return
+            canvas_height = canvas.winfo_height()
+            content_height = bbox[3] - bbox[1]
+            if content_height <= canvas_height:
+                return
+            delta = int(-1 * (event.delta / 120))
+            current = canvas.canvasy(0)
+            new_y = current + delta * 20
+            if new_y < 0:
+                new_y = 0
+            elif new_y > content_height - canvas_height:
+                new_y = content_height - canvas_height
+            canvas.yview_moveto(new_y / content_height)
         canvas.bind("<Enter>", lambda e: self.root.bind_all("<MouseWheel>", mw))
         canvas.bind("<Leave>", lambda e: self.root.unbind_all("<MouseWheel>"))
         build_inner(scroll_frame)
@@ -392,7 +407,7 @@ class PrivacyScopeApp:
     def _build_module_page(self, parent, mod_data, module_key):
         def build(scroll_frame):
             inner = tk.Frame(scroll_frame, bg=BG)
-            inner.pack(fill=tk.BOTH, expand=True, padx=18, pady=(14, 8))
+            inner.pack(fill=tk.BOTH, expand=True, padx=18, pady=(10, 8))
 
             header = tk.Frame(inner, bg=BG)
             header.pack(fill=tk.X, pady=(0, 16))
@@ -510,7 +525,7 @@ class PrivacyScopeApp:
 
         def build(scroll_frame):
             inner = tk.Frame(scroll_frame, bg=BG)
-            inner.pack(fill=tk.X, padx=20, pady=(16, 10))
+            inner.pack(fill=tk.X, padx=20, pady=(12, 10))
 
             # ── dashboard header ─────────────────────────────────────
             title_row = tk.Frame(inner, bg=BG)
