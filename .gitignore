@@ -1,0 +1,39 @@
+# Git-generated files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.spec
+*.egg-info
+.eggs/
+*.manifest
+*.spec
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Virtual env
+venv/
+env/
+.venv/
+
+# PyInstaller
+*.spec
+build/
+dist/
+
+# App cache
+*.log

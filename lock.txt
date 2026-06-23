@@ -1,0 +1,29 @@
+# PrivacyScope Change Log
+# Format: [YYYY-MM-DD HH:MM] <file> — <change description>
+
+[2026-06-23 20:50] privacyscope/ — Project initialized
+[2026-06-23 20:50] plan.md — Created project plan
+[2026-06-23 20:50] lock.txt — Created change log
+[2026-06-23 20:50] modules/__init__.py — Package init
+[2026-06-23 20:50] requirements.txt — Added psutil dependency
+[2026-06-23 20:52] modules/network.py — WiFi/network visibility scanner (19 checks)
+[2026-06-23 20:54] modules/telemetry.py — Microsoft telemetry scanner (9 checks)
+[2026-06-23 20:56] modules/browser.py — Browser fingerprint scanner (17 checks)
+[2026-06-23 20:58] modules/broadcasts.py — Local broadcast scanner (9 checks)
+[2026-06-23 21:00] main.py — Tkinter GUI with 5 tabs, dashboard, export, copy-to-clipboard
+[2026-06-23 21:02] README.md — User documentation
+[2026-06-23 21:08] Verified — All 4 modules import and scan, 54 total exposure items
+[2026-06-23 21:15] main.py — Redesigned UI: Vercel/terminal dark theme, monospace fonts, custom tabs, hero score dashboard
+[2026-06-23 21:25] main.py — Fixed: progress bar pack_propagate, separator line height, tab border, dead code, dark scrollbar on dashboard
+[2026-06-23 21:25] modules/broadcasts.py — Fixed: check_netbios now enumerates registry keys properly; removed dead wifi_probe code; added proper re import
+[2026-06-23 21:25] modules/network.py — Fixed: removed unused platform import; check_doh_status now checks both DoH and DoT properly
+[2026-06-23 21:40] main.py — Major rewrite: unified color palette (#080808 bg, single surface), progress bar fixed (place/relwidth), detail toggle robust (card._detail_visible), shared _make_scrollable helper, mousewheel survives tab switches, hover states on dashboard cards
+[2026-06-24 00:15] modules/telemetry.py — Added action buttons: Set Telemetry to Basic, Toggle Ad ID/Cortana/WebSearch/Location/Tailored/ActivityHistory, Turn Off P2P
+[2026-06-24 00:20] modules/broadcasts.py — Added action buttons: Hide Bluetooth, Disable NetBIOS/LLMNR/NetworkDiscovery/FileSharing/SSDP/NearbyShare
+[2026-06-24 00:22] modules/network.py — Added action: Open DNS Settings
+[2026-06-24 00:24] modules/browser.py — Added action: Enable DNT, Block All Cookies
+[2026-06-24 00:30] modules/monitor.py — New terminal monitor: live connections, DNS cache, ARP table, broadcast info
+[2026-06-24 00:55] main.py — Fixed action buttons: no longer fails on reg stderr output, checks returncode, shows real error messages, supports admin flag for HKLM keys
+[2026-06-24 00:56] modules/monitor.py — Removed slow socket.getfqdn DNS lookups, cut PowerShell timeouts to 6s, added 5-second cache so repeated calls don't re-scan
+[2026-06-24 01:30] modules/firewall.py — New Firewall scanner: checks service, 3 profiles (Domain/Private/Public), inbound/outbound rules count, risky inbound rules (RDP, SMB, All), logging, notifications. Each with enable/disable actions.
+[2026-06-24 01:35] main.py — Dashboard redesigned as visual preview: semi-circle gauge (arc + score), severity stat buttons (● count), 2x2+1 category cards with stacked bar charts showing severity distribution, top 3 items per card, "view more" links. Added Firewall tab to scan loop.
