@@ -40,11 +40,11 @@ MODULES = [
 ]
 
 TABS = [
-    ("dashboard", "Dashboard", "\u25c9"),
-    ("microsoft", "Microsoft", "\u25a0"),
+    ("dashboard", "Overview", "\u25c6"),
+    ("microsoft", "Microsoft", "\u229e"),
     ("wifi", "WiFi / ISP", "\u223c"),
-    ("browser", "Websites", "\u25cc"),
-    ("broadcasts", "Nearby", "\u25c7"),
+    ("browser", "Websites", "\u25c9"),
+    ("broadcasts", "Nearby", "\u2756"),
     ("firewall", "Firewall", "\u25a8"),
     ("terminal", "Terminal", "$"),
 ]
@@ -510,8 +510,18 @@ class PrivacyScopeApp:
 
         def build(scroll_frame):
             inner = tk.Frame(scroll_frame, bg=BG)
-            inner.pack(fill=tk.X, padx=18, pady=(14, 10))
-            wl = self._get_wraplength(inner)
+            inner.pack(fill=tk.X, padx=20, pady=(16, 10))
+
+            # ── dashboard header ─────────────────────────────────────
+            title_row = tk.Frame(inner, bg=BG)
+            title_row.pack(fill=tk.X, pady=(0, 2))
+
+            tk.Label(title_row, text="Dashboard", bg=BG, fg=FG,
+                    font=("Consolas", 13, "bold")).pack(side=tk.LEFT)
+
+            total = sum(len(d["items"]) for d in self.data.values())
+            tk.Label(title_row, text=f"{total} items", bg=BG, fg=FG_MUTE,
+                    font=FONT).pack(side=tk.LEFT, padx=(8, 0))
 
             # ── score row ───────────────────────────────────────────
             total_high = sum(1 for k in self.data for i in self.data[k]["items"]
@@ -527,48 +537,48 @@ class PrivacyScopeApp:
             sc = "#22c55e" if score < 25 else "#eab308" if score < 50 else "#ef4444"
 
             hero_row = tk.Frame(inner, bg=BG)
-            hero_row.pack(fill=tk.X, pady=(0, 16))
+            hero_row.pack(fill=tk.X, pady=(10, 18))
 
-            # gauge
-            gs = 110
+            gs = 100
             gauge = tk.Canvas(hero_row, bg=BG, width=gs, height=gs, highlightthickness=0)
-            gauge.pack(side=tk.LEFT, padx=(0, 14))
+            gauge.pack(side=tk.LEFT, padx=(0, 16))
             cx = gs // 2
-            cy = gs - 6
-            r = gs // 2 - 10
+            cy = gs - 4
+            r = gs // 2 - 12
             extent = max(5, int(180 * score / 100))
             gauge.create_arc(cx - r, cy - r, cx + r, cy + r,
                            start=180, extent=180, style=tk.ARC, outline=BORDER, width=6)
             gauge.create_arc(cx - r, cy - r, cx + r, cy + r,
                            start=180, extent=extent, style=tk.ARC, outline=sc, width=6)
-            gauge.create_text(cx, cy - 10, text=str(score),
-                            fill=sc, font=("Consolas", 20, "bold"))
-            gauge.create_text(cx, cy + 14, text="exposure",
+            gauge.create_text(cx, cy - 8, text=str(score),
+                            fill=sc, font=("Consolas", 18, "bold"))
+            gauge.create_text(cx, cy + 12, text="exposure",
                             fill=FG_MUTE, font=FONT_SM)
 
-            # stats
             sf = tk.Frame(hero_row, bg=BG)
-            sf.pack(side=tk.LEFT, fill=tk.X, expand=True, pady=(8, 0))
+            sf.pack(side=tk.LEFT, fill=tk.X, expand=True, pady=(6, 0))
+
             desc = ("Well locked down" if score < 25
                     else "Moderate exposure" if score < 50
-                    else "High exposure — review below")
+                    else "High exposure")
             tk.Label(sf, text=desc, bg=BG, fg=FG, font=FONT_TITLE).pack(anchor=tk.W)
 
             sr = tk.Frame(sf, bg=BG)
-            sr.pack(fill=tk.X, pady=(8, 0))
+            sr.pack(fill=tk.X, pady=(6, 0))
             for label, count, color in [("High", total_high, "#ef4444"),
                                          ("Medium", total_med, "#eab308"),
                                          ("Low", total_low, "#22c55e")]:
-                f = tk.Frame(sr, bg=BG)
-                f.pack(side=tk.LEFT, padx=(0, 18))
-                tk.Label(f, text=f"\u25cf {count}", bg=BG, fg=color,
-                        font=("Consolas", 11, "bold")).pack(side=tk.LEFT)
-                tk.Label(f, text=f" {label}", bg=BG, fg=FG_SEC,
-                        font=FONT_SM).pack(side=tk.LEFT)
+                tk.Label(sr, text=f"\u25cf {count} ", bg=BG, fg=color,
+                        font=("Consolas", 10, "bold")).pack(side=tk.LEFT)
+                tk.Label(sr, text=f"{label}  ", bg=BG, fg=FG_SEC,
+                        font=FONT_SM).pack(side=tk.LEFT, padx=(0, 14))
 
-            # ── category cards ─────────────────────────────────────
+            # ── category cards — 2-column responsive grid ────────────
             keys_ordered = ["microsoft", "wifi", "browser", "broadcasts", "firewall"]
-            for key in keys_ordered:
+            grid = tk.Frame(inner, bg=BG)
+            grid.pack(fill=tk.X)
+
+            for i, key in enumerate(keys_ordered):
                 if key not in self.data:
                     continue
                 cat = self.data[key]
@@ -578,9 +588,17 @@ class PrivacyScopeApp:
                 lo = sum(1 for it in items if it.get("severity") == "low")
                 t = h + m + lo or 1
 
-                card = tk.Frame(inner, bg=BG_SURFACE, highlightbackground=BORDER,
+                col = i % 2
+                row = i // 2
+                is_last_odd = (i == len(keys_ordered) - 1 and col == 0)
+
+                cs = 2 if is_last_odd else 1
+
+                card = tk.Frame(grid, bg=BG_SURFACE, highlightbackground=BORDER,
                               highlightthickness=1, cursor="hand2")
-                card.pack(fill=tk.X, pady=(0, 8))
+                padx = (0, 6) if col == 0 else (6, 0)
+                card.grid(row=row, column=col, columnspan=cs, padx=padx, pady=5,
+                         sticky="nsew")
                 card.bind("<Button-1>", lambda e, k=key: self._show_tab(k))
                 card.bind("<Enter>", lambda e, c=card: c.configure(
                     highlightbackground=BORDER_HI))
@@ -588,13 +606,12 @@ class PrivacyScopeApp:
                     highlightbackground=BORDER))
 
                 hdr = tk.Frame(card, bg=BG_SURFACE)
-                hdr.pack(fill=tk.X, padx=16, pady=(12, 6))
+                hdr.pack(fill=tk.X, padx=16, pady=(14, 8))
                 tk.Label(hdr, text=WHO[key], bg=BG_SURFACE, fg=FG,
                         font=("Consolas", 10, "bold")).pack(side=tk.LEFT)
 
-                # bar chart
                 bar_row = tk.Frame(card, bg=BG_SURFACE)
-                bar_row.pack(fill=tk.X, padx=16, pady=(0, 8))
+                bar_row.pack(fill=tk.X, padx=16, pady=(0, 10))
                 bar_bg = tk.Frame(bar_row, bg=BORDER, height=6)
                 bar_bg.pack(fill=tk.X)
                 bar_bg.pack_propagate(False)
@@ -602,13 +619,11 @@ class PrivacyScopeApp:
                 for s, cnt, c in [("high", h, "#ef4444"), ("medium", m, "#eab308"),
                                     ("low", lo, "#22c55e")]:
                     if cnt > 0:
-                        w = cnt / t
                         seg = tk.Frame(bar_bg, bg=c)
-                        seg.place(relx=cum, rely=0, relwidth=w, relheight=1)
-                        cum += w
+                        seg.place(relx=cum, rely=0, relwidth=cnt / t, relheight=1)
+                        cum += cnt / t
 
-                # top items
-                for item in items[:4]:
+                for item in items[:3]:
                     s = item.get("severity", "low")
                     ir = tk.Frame(card, bg=BG_SURFACE)
                     ir.pack(fill=tk.X, padx=16, pady=(0, 3))
@@ -616,18 +631,21 @@ class PrivacyScopeApp:
                             font=("Consolas", 6)).pack(side=tk.LEFT)
                     tk.Label(ir, text=f" {item['label']}", bg=BG_SURFACE,
                             fg=FG_SEC, font=FONT_SM).pack(side=tk.LEFT)
-                    v = str(item.get("value", ""))[:30]
+                    v = str(item.get("value", ""))[:25]
                     if v:
                         tk.Label(ir, text=f" {v}", bg=BG_SURFACE,
                                 fg=FG_MUTE, font=FONT_SM).pack(side=tk.LEFT)
 
-                rem = len(items) - 4
+                rem = len(items) - 3
                 if rem > 0:
                     more = tk.Frame(card, bg=BG_SURFACE, cursor="hand2")
-                    more.pack(fill=tk.X, padx=16, pady=(6, 12))
+                    more.pack(fill=tk.X, padx=16, pady=(6, 14))
                     more.bind("<Button-1>", lambda e, k=key: self._show_tab(k))
                     tk.Label(more, text=f"+ {rem} more \u2192", bg=BG_SURFACE,
                             fg=FG_MUTE, font=FONT_SM).pack(anchor=tk.W)
+
+            grid.grid_columnconfigure(0, weight=1)
+            grid.grid_columnconfigure(1, weight=1)
 
             # ── terminal preview ──────────────────────────────────
             try:
@@ -638,7 +656,7 @@ class PrivacyScopeApp:
 
             term_sec = tk.Frame(inner, bg=BG_SURFACE, highlightbackground=BORDER,
                                highlightthickness=1)
-            term_sec.pack(fill=tk.X, pady=(6, 10))
+            term_sec.pack(fill=tk.X, pady=(8, 10))
 
             th = tk.Frame(term_sec, bg=BG_SURFACE, cursor="hand2")
             th.pack(fill=tk.X)
