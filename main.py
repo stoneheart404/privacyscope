@@ -92,10 +92,15 @@ class DarkButton(tk.Canvas):
 class PrivacyScopeApp:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("privacyscope")
-        self.root.geometry("960x700")
+        self.root.overrideredirect(True)
+        self.root.geometry("960x700+200+100")
         self.root.minsize(820, 550)
         self.root.configure(bg=BG)
+
+        self._drag_x = 0
+        self._drag_y = 0
+        self._maximized = False
+        self._restore_geom = ""
 
         style = ttk.Style()
         style.configure("TScrollbar", background=BG, troughcolor=BG,
@@ -110,7 +115,7 @@ class PrivacyScopeApp:
         self._scan_total = len([m for m in MODULES if m[2] != "terminal"])
         self._scan_status = {key: "pending" for _, _, key in MODULES if key != "terminal"}
 
-        self._build_toolbar()
+        self._build_titlebar()
 
         body = tk.Frame(self.root, bg=BG)
         body.pack(fill=tk.BOTH, expand=True)
@@ -128,39 +133,84 @@ class PrivacyScopeApp:
 
         self._show_tab("dashboard")
 
-        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.after(300, self.refresh_all)
-        self.root.after(100, lambda: self.root.lift())
-        self.root.after(200, lambda: self.root.focus_force())
+        self.root.after(50, lambda: self.root.lift())
+        self.root.after(100, lambda: self.root.focus_force())
         self.root.mainloop()
 
-    # ── toolbar ─────────────────────────────────────────────────────
-    def _build_toolbar(self):
-        bar = tk.Frame(self.root, bg=BG, height=36)
+    # ── custom title bar ─────────────────────────────────────────────
+    def _start_drag(self, event):
+        if not self._maximized and event.x < self.root.winfo_width() - 140:
+            self._drag_x = event.x
+            self._drag_y = event.y
+
+    def _do_drag(self, event):
+        if not self._maximized:
+            x = self.root.winfo_x() + event.x - self._drag_x
+            y = self.root.winfo_y() + event.y - self._drag_y
+            self.root.geometry(f"+{x}+{y}")
+
+    def _minimize(self):
+        self.root.iconify()
+
+    def _toggle_maximize(self):
+        if self._maximized:
+            self.root.geometry(self._restore_geom)
+            self._maximized = False
+        else:
+            self._restore_geom = self.root.geometry()
+            sw = self.root.winfo_screenwidth()
+            sh = self.root.winfo_screenheight()
+            self.root.geometry(f"{sw}x{sh - 40}+0+0")
+            self._maximized = True
+
+    def _build_titlebar(self):
+        bar = tk.Frame(self.root, bg=BG, height=38)
         bar.pack(fill=tk.X, side=tk.TOP)
+        bar.pack_propagate(False)
 
         border = tk.Frame(bar, bg=BORDER, height=1)
         border.pack(side=tk.BOTTOM, fill=tk.X)
         border.pack_propagate(False)
 
-        inner = tk.Frame(bar, bg=BG)
-        inner.pack(fill=tk.X, padx=10, pady=4)
+        # drag target — whole bar
+        bar.bind("<Button-1>", self._start_drag)
+        bar.bind("<B1-Motion>", self._do_drag)
 
-        tk.Label(inner, text="\u25c9", bg=BG, fg="#22c55e",
-                font=("Consolas", 10)).pack(side=tk.LEFT, padx=(2, 4))
-        tk.Label(inner, text="PRIVACYSCOPE", bg=BG, fg=FG_SEC,
-                font=("Consolas", 8, "bold")).pack(side=tk.LEFT, padx=(0, 14))
+        # left side
+        left = tk.Frame(bar, bg=BG)
+        left.pack(side=tk.LEFT, fill=tk.Y, padx=(12, 0))
 
-        DarkButton(inner, "Scan All", self.refresh_all, 80).pack(side=tk.LEFT, padx=(0, 4))
-        DarkButton(inner, "Export", self.export_report, 62).pack(side=tk.LEFT, padx=4)
-        DarkButton(inner, "Copy", lambda: self._copy_module(self._active_tab), 52).pack(side=tk.LEFT, padx=4)
+        tk.Label(left, text="\u25c9", bg=BG, fg="#22c55e",
+                font=("Consolas", 11)).pack(side=tk.LEFT, padx=(0, 6))
+        tk.Label(left, text="privacyscope", bg=BG, fg=FG_SEC,
+                font=("Consolas", 8)).pack(side=tk.LEFT, padx=(0, 16))
+
+        DarkButton(left, "Scan All", self.refresh_all, 80, 26).pack(side=tk.LEFT, padx=(0, 6))
+        DarkButton(left, "Export", self.export_report, 62, 26).pack(side=tk.LEFT, padx=(0, 6))
+        DarkButton(left, "Copy", lambda: self._copy_module(self._active_tab), 52, 26).pack(side=tk.LEFT, padx=(0, 6))
 
         self.auto_var = tk.BooleanVar(value=False)
-        cb = tk.Checkbutton(inner, text="auto-refresh", variable=self.auto_var,
+        cb = tk.Checkbutton(left, text="auto-refresh", variable=self.auto_var,
                             command=self._toggle_auto, bg=BG, fg=FG_MUTE,
                             selectcolor=BG, font=FONT_SM, activebackground=BG,
                             activeforeground=FG_SEC, relief=tk.FLAT, cursor="hand2")
-        cb.pack(side=tk.RIGHT)
+        cb.pack(side=tk.LEFT, padx=(4, 0))
+
+        # right side — window controls
+        right = tk.Frame(bar, bg=BG)
+        right.pack(side=tk.RIGHT, fill=tk.Y)
+
+        for text, cmd in [("\u2500", self._minimize),
+                          ("\u25a1", self._toggle_maximize),
+                          ("\u2715", self._on_close)]:
+            btn = tk.Label(right, text=text, bg=BG, fg=FG_SEC, font=("Consolas", 10),
+                          padx=14, pady=0, cursor="hand2")
+            btn.pack(side=tk.RIGHT, fill=tk.Y)
+            btn.bind("<Enter>", lambda e, b=btn, t=text: b.configure(
+                bg="#e81123" if t == "\u2715" else "#2a2a2a", fg="#fff"))
+            btn.bind("<Leave>", lambda e, b=btn: b.configure(bg=BG, fg=FG_SEC))
+            btn.bind("<Button-1>", lambda e, c=cmd: c())
 
     # ── sidebar ─────────────────────────────────────────────────────
     def _build_sidebar(self, body):
@@ -173,7 +223,7 @@ class PrivacyScopeApp:
         right_line.pack_propagate(False)
 
         sep = tk.Frame(self.sidebar, bg=BORDER, height=1)
-        sep.pack(side=tk.TOP, fill=tk.X, padx=0, pady=(46, 6))
+        sep.pack(side=tk.TOP, fill=tk.X, padx=0, pady=(6, 6))
 
         self.side_btns = {}
         for key, label, icon in TABS:
