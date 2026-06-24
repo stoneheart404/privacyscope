@@ -373,51 +373,125 @@ class PrivacyScopeApp:
         total = sum(len(d["items"]) for d in self.data.values() if d["label"] != "Terminal")
         self.status_var.set(f"> {total} items exposed")
 
-    # ── scroll helper ───────────────────────────────────────────────
+    # ── scroll helper (custom dark scrollbar) ────────────────────────
     def _make_scrollable(self, parent, build_inner):
-        canvas = tk.Canvas(parent, bg=BG, highlightthickness=0)
-        scrollbar = tk.Scrollbar(parent, bg=BG, troughcolor=BG, activebackground=BORDER,
-                                 borderwidth=0, highlightthickness=0)
+        container = tk.Frame(parent, bg=BG)
+        container.pack(fill=tk.BOTH, expand=True)
+
+        canvas = tk.Canvas(container, bg=BG, highlightthickness=0)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
         scroll_frame = tk.Frame(canvas, bg=BG)
         win_id = canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
 
-        def _resize(event):
-            canvas.itemconfig(win_id, width=event.width)
-            canvas._content_width = event.width
+        # custom scrollbar track (right edge)
+        track_width = 6
+        track = tk.Canvas(container, bg=BG, width=track_width, highlightthickness=0,
+                         cursor="hand2")
+        track.pack(side=tk.RIGHT, fill=tk.Y)
 
-        scroll_frame.bind("<Configure>",
-                          lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        def _draw_scroll():
+            track.delete("all")
+            bbox = canvas.bbox("all")
+            if not bbox:
+                return
+            ch = canvas.winfo_height()
+            content_h = bbox[3] - bbox[1]
+            if content_h <= ch:
+                return
+
+            thumb_h = max(20, ch * ch / content_h)
+            first = canvas.canvasy(0)
+            max_top = ch - thumb_h
+            if max_top <= 0:
+                return
+            top = (first / (content_h - ch)) * max_top if content_h > ch else 0
+            top = max(0, min(max_top, top))
+
+            track.create_rectangle(0, top, track_width, top + thumb_h,
+                                  fill=BORDER_HI, outline="", width=0)
+
+        def _resize(event):
+            w = event.width - track_width
+            canvas.itemconfig(win_id, width=w)
+            canvas._content_width = w
+            canvas.after(10, _draw_scroll)
+
+        def _on_configure(e):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            canvas.after(10, _draw_scroll)
+
+        scroll_frame.bind("<Configure>", _on_configure)
         canvas.bind("<Configure>", _resize)
         canvas._content_width = 700
-        canvas.configure(yscrollcommand=scrollbar.set)
-        scrollbar.configure(command=canvas.yview)
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         def _wraplength(c=canvas):
             return max(300, getattr(c, '_content_width', 600) - 50)
         canvas._wraplength = _wraplength
 
-        def mw(event):
-            # clamp scrolling to content bounds
+        # track interactions
+        def _track_click(event):
             bbox = canvas.bbox("all")
             if not bbox:
                 return
-            canvas_height = canvas.winfo_height()
-            content_height = bbox[3] - bbox[1]
-            if content_height <= canvas_height:
+            ch = canvas.winfo_height()
+            content_h = bbox[3] - bbox[1]
+            if content_h <= ch:
+                return
+            thumb_h = max(20, ch * ch / content_h)
+            max_top = ch - thumb_h
+            if max_top <= 0:
+                return
+            pct = event.y / ch
+            new_first = pct * (content_h - ch)
+            canvas.yview_moveto(new_first / content_h)
+            _draw_scroll()
+
+        def _thumb_drag(event):
+            bbox = canvas.bbox("all")
+            if not bbox:
+                return
+            ch = canvas.winfo_height()
+            content_h = bbox[3] - bbox[1]
+            if content_h <= ch:
+                return
+            thumb_h = max(20, ch * ch / content_h)
+            max_top = ch - thumb_h
+            if max_top <= 0:
+                return
+            y = event.y
+            pct = (y - thumb_h / 2) / max_top
+            pct = max(0, min(1, pct))
+            new_first = pct * (content_h - ch)
+            canvas.yview_moveto(new_first / content_h)
+            _draw_scroll()
+
+        track.bind("<Button-1>", _track_click)
+        track.bind("<B1-Motion>", _thumb_drag)
+
+        def mw(event):
+            bbox = canvas.bbox("all")
+            if not bbox:
+                return
+            ch = canvas.winfo_height()
+            content_h = bbox[3] - bbox[1]
+            if content_h <= ch:
                 return
             delta = int(-1 * (event.delta / 120))
             current = canvas.canvasy(0)
             new_y = current + delta * 20
             if new_y < 0:
                 new_y = 0
-            elif new_y > content_height - canvas_height:
-                new_y = content_height - canvas_height
-            canvas.yview_moveto(new_y / content_height)
+            elif new_y > content_h - ch:
+                new_y = content_h - ch
+            canvas.yview_moveto(new_y / content_h)
+            _draw_scroll()
+
         canvas.bind("<Enter>", lambda e: self.root.bind_all("<MouseWheel>", mw))
         canvas.bind("<Leave>", lambda e: self.root.unbind_all("<MouseWheel>"))
+
         build_inner(scroll_frame)
+        canvas.after(100, _draw_scroll)
 
     def _get_wraplength(self, widget):
         while widget:
