@@ -116,14 +116,13 @@ class PrivacyScopeApp:
         self._scan_status = {key: "pending" for _, _, key in MODULES if key != "terminal"}
 
         self._build_titlebar()
+        self._build_tab_bar()
 
         body = tk.Frame(self.root, bg=BG)
         body.pack(fill=tk.BOTH, expand=True)
 
-        self._build_sidebar(body)
-
         self.content = tk.Frame(body, bg=BG)
-        self.content.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        self.content.pack(fill=tk.BOTH, expand=True)
 
         self.tab_frames = {}
         for key in ["dashboard", "microsoft", "wifi", "browser", "broadcasts", "firewall", "terminal"]:
@@ -212,31 +211,45 @@ class PrivacyScopeApp:
             btn.bind("<Leave>", lambda e, b=btn: b.configure(bg=BG, fg=FG_SEC))
             btn.bind("<Button-1>", lambda e, c=cmd: c())
 
-    # ── sidebar ─────────────────────────────────────────────────────
-    def _build_sidebar(self, body):
-        self.sidebar = tk.Frame(body, bg=BG_SIDEBAR, width=44)
-        self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
-        self.sidebar.pack_propagate(False)
+    # ── tab bar ──────────────────────────────────────────────────────
+    def _build_tab_bar(self):
+        self.tab_bar = tk.Frame(self.root, bg=BG, height=34)
+        self.tab_bar.pack(fill=tk.X, side=tk.TOP)
 
-        right_line = tk.Frame(self.sidebar, bg=BORDER, width=1)
-        right_line.pack(side=tk.RIGHT, fill=tk.Y)
-        right_line.pack_propagate(False)
+        border = tk.Frame(self.tab_bar, bg=BORDER, height=1)
+        border.pack(fill=tk.X, side=tk.BOTTOM)
+        border.pack_propagate(False)
 
-        sep = tk.Frame(self.sidebar, bg=BORDER, height=1)
-        sep.pack(side=tk.TOP, fill=tk.X, padx=0, pady=(6, 6))
+        inner = tk.Frame(self.tab_bar, bg=BG)
+        inner.pack(fill=tk.X, padx=12)
 
-        self.side_btns = {}
+        self.tab_labels = {}
+        self.tab_indicators = {}
+
         for key, label, icon in TABS:
-            btn = tk.Label(self.sidebar, text=icon, bg=BG_SIDEBAR, fg=FG_MUTE,
-                          font=("Consolas", 11), cursor="hand2", padx=2, pady=6)
-            btn.pack()
-            btn.bind("<Button-1>", lambda e, k=key: self._show_tab(k))
-            btn.bind("<Enter>", lambda e, b=btn: b.configure(fg=FG, bg="#0a0a0a"))
-            btn.bind("<Leave>", lambda e, b=btn, k=key:
-                     b.configure(fg=FG if self._active_tab == k else FG_MUTE,
-                                bg=BG_SIDEBAR if self._active_tab != k else "#0a0a0a"))
-            btn._key = key
-            self.side_btns[key] = btn
+            frame = tk.Frame(inner, bg=BG, cursor="hand2")
+            frame.pack(side=tk.LEFT)
+
+            if key != TABS[0][0]:
+                sep = tk.Frame(inner, bg=BORDER, width=1)
+                sep.pack(side=tk.LEFT, fill=tk.Y)
+
+            lbl = tk.Label(frame, text=f" {label} ", bg=BG, fg=FG_SEC,
+                          font=FONT, padx=12, pady=8)
+            lbl.pack()
+            lbl.bind("<Button-1>", lambda e, k=key: self._show_tab(k))
+            frame.bind("<Button-1>", lambda e, k=key: self._show_tab(k))
+            lbl.bind("<Enter>", lambda e, l=lbl: l.configure(fg=FG, bg="#1a1a1a"))
+            lbl.bind("<Leave>", lambda e, l=lbl, k=key:
+                     l.configure(fg=FG if self._active_tab == k else FG_SEC,
+                                bg="#1a1a1a" if self._active_tab == k else BG))
+            lbl._name = key
+
+            indicator = tk.Frame(frame, bg=BG, height=2)
+            indicator.pack(fill=tk.X)
+
+            self.tab_labels[key] = lbl
+            self.tab_indicators[key] = indicator
 
     def _show_tab(self, key):
         self.root.unbind_all("<MouseWheel>")
@@ -246,10 +259,12 @@ class PrivacyScopeApp:
             f.pack_forget()
         self.tab_frames[key].pack(fill=tk.BOTH, expand=True)
 
-        for k, btn in self.side_btns.items():
+        for k, lbl in self.tab_labels.items():
             active = k == key
-            btn.configure(fg=FG if active else FG_MUTE,
-                         bg="#0a0a0a" if active else BG_SIDEBAR)
+            lbl.configure(fg=FG if active else FG_SEC,
+                         bg="#1a1a1a" if active else BG)
+        for k, ind in self.tab_indicators.items():
+            ind.configure(bg="#22c55e" if k == key else BG)
 
         if key == "dashboard":
             self._build_dashboard()
