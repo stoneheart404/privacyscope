@@ -791,10 +791,12 @@ class PrivacyScopeApp:
             if elevated:
                 ps_cmd = f'''Start-Process cmd -Verb RunAs -Wait -ArgumentList '/c {cmd} & pause' '''
                 r = subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd],
-                                   capture_output=True, text=True, timeout=30)
+                                   capture_output=True, text=True, timeout=30,
+                                   creationflags=subprocess.CREATE_NO_WINDOW)
             else:
                 r = subprocess.run(cmd, capture_output=True, text=True,
-                                   timeout=20, shell=True)
+                                   timeout=20, shell=True,
+                                   creationflags=subprocess.CREATE_NO_WINDOW)
             return r
 
         try:

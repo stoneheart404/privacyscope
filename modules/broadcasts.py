@@ -1,11 +1,13 @@
 import subprocess
 import winreg
 import json
+import sys
 
 
 def _run_cmd(cmd):
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=15, shell=True)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=15, shell=True,
+                           creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
         return r.stdout.strip() or r.stderr.strip()
     except Exception:
         return ""
@@ -14,7 +16,8 @@ def _run_cmd(cmd):
 def _run_ps(cmd):
     try:
         r = subprocess.run(["powershell", "-NoProfile", "-Command", cmd],
-                           capture_output=True, text=True, timeout=15)
+                           capture_output=True, text=True, timeout=15,
+                           creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
         return r.stdout.strip() or r.stderr.strip()
     except Exception:
         return ""

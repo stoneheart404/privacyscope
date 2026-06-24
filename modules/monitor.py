@@ -1,6 +1,7 @@
 import socket
 import subprocess
 import time
+import sys
 
 try:
     import psutil
@@ -12,7 +13,8 @@ except ImportError:
 def _run_ps(cmd):
     try:
         r = subprocess.run(["powershell", "-NoProfile", "-Command", cmd],
-                           capture_output=True, text=True, timeout=6)
+                           capture_output=True, text=True, timeout=6,
+                           creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
         return r.stdout.strip() or r.stderr.strip()
     except Exception:
         return ""
