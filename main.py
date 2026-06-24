@@ -376,7 +376,8 @@ class PrivacyScopeApp:
     # ── scroll helper ───────────────────────────────────────────────
     def _make_scrollable(self, parent, build_inner):
         canvas = tk.Canvas(parent, bg=BG, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL)
+        scrollbar = tk.Scrollbar(parent, bg=BG, troughcolor=BG, activebackground=BORDER,
+                                 borderwidth=0, highlightthickness=0)
         scroll_frame = tk.Frame(canvas, bg=BG)
         win_id = canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
 
