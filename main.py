@@ -97,12 +97,15 @@ class PrivacyScopeApp:
         self.root.minsize(820, 550)
         self.root.configure(bg=BG)
 
-        # taskbar icon
         try:
             ico = os.path.join(os.path.dirname(__file__), "icon.ico")
             self.root.iconbitmap(default=ico)
         except Exception:
             pass
+
+        # proper window behavior for frameless
+        self.root.bind("<FocusIn>", lambda e: self.root.lift())
+        self.root.after(50, self._make_taskbar_visible)
 
         self._drag_x = 0
         self._drag_y = 0
@@ -143,6 +146,22 @@ class PrivacyScopeApp:
         self.root.after(50, lambda: self.root.lift())
         self.root.after(100, lambda: self.root.focus_force())
         self.root.mainloop()
+
+    def _on_focus(self):
+        try:
+            self.root.focus_force()
+            self.root.lift()
+        except Exception:
+            pass
+
+    def _make_taskbar_visible(self):
+        try:
+            import ctypes
+            hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+            ctypes.windll.user32.SetWindowLongW(hwnd, -20,
+                ctypes.windll.user32.GetWindowLongW(hwnd, -20) | 0x00080000)
+        except Exception:
+            pass
 
     # ── custom title bar ─────────────────────────────────────────────
     def _start_drag(self, event):
