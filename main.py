@@ -97,6 +97,13 @@ class PrivacyScopeApp:
         self.root.minsize(820, 550)
         self.root.configure(bg=BG)
 
+        # taskbar icon
+        try:
+            ico = os.path.join(os.path.dirname(__file__), "icon.ico")
+            self.root.iconbitmap(default=ico)
+        except Exception:
+            pass
+
         self._drag_x = 0
         self._drag_y = 0
         self._maximized = False
